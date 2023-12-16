@@ -1,0 +1,172 @@
+{% extends 'base.html' %} {% block content %} {% load static socialaccount %}
+{% comment %} used
+https://dev.to/balt1794/navbar-styling-logo-using-bootstrap5-django-12f3 for the
+css styling {% endcomment %}
+<style>
+  .navbar-brand {
+    margin-left: 10px;
+  }
+
+  .napspots-nav-item {
+    margin-left: 20px;
+  }
+</style>
+{% comment %} used https://getbootstrap.com/docs/4.4/components/navbar/ for the
+navbar stuff here {% endcomment %}
+{% if user.is_authenticated %}
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <a class="navbar-brand" href="{% url 'my_map_view' %}">Napster</a>
+  <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav mr-auto">
+          <li class="nav-item active ml-3">
+              <a class="nav-link" href="{% url 'home' %}">Home</a>
+          </li>
+          <li class="nav-item active ml-3">
+              <a class="nav-link" href="{% url 'user_feedback' %}">Your Logs</a>
+          </li>
+          <li class="nav-item active ml-3">
+              <a class="nav-link" href="{% url 'my_map_view' %}">View Nap Spots on Map</a>
+          </li>
+          <li class="nav-item active ml-3">
+              <a class="nav-link" href="{% url 'logout_view' %}">Logout</a>
+          </li>
+      </ul>
+  </div>
+</nav>
+
+{% comment %} chat GPT helped me to pass ID through, but mostly based off of
+sumbitLocationData in maps.html which cites:
+https://testdriven.io/blog/django-ajax-xhr/ {% endcomment %}
+<script>
+  (function () {
+    function submitRatingData(id) {
+      var ID = id;
+      var rating = document.getElementById("locationRating").value;
+      var description = document.getElementById("locationDescription").value;
+
+      fetch("{% url 'add_rating' %}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "X-CSRFToken": "{{ csrf_token }}",
+        },
+        body: `ID=${ID}&rating=${rating}&description=${description}`,
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            alert(data.message);
+                document.getElementById('locationRating').value = '';
+                document.getElementById('locationDescription').value = '';
+          } else {
+            alert("Error: " + data.message);
+          }
+        });
+    }
+
+    // Ensure submitRatingData is accessible in the global scope
+    window.submitRatingData = submitRatingData;
+  })();
+</script>
+
+<div class="text-center mt-2">
+  <h2>More information about the location {{spot.name}}</h2>
+  <h6>{{spot.name}} has a rating of {{spot.rating_average|floatformat:2}}</h6>
+</div>
+
+<!-- Image Upload Form -->
+<div class="container mt-4">
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title">Upload an Image for this Location</h5>
+      <p>Please upload only .jpg, .jpeg, or .png files.</p> <!-- User instruction -->
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Upload Image</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Display Uploaded Images -->
+<div class="container mt-4">
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title">Location Images</h5>
+      {% for image in spot.images.all %}
+        <img src="{{ image.image.url }}" alt="Image of {{ spot.name }}" class="img-fluid mb-3" style="max-width: 300px; max-height: 300px;">
+      {% empty %}
+        <p>No images uploaded for this location.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="container mt-2">
+  <div class="row">
+    <div class="col-lg-6 mb-4">
+      <div class="card">
+        <div class="text-center m-2">
+          <div class="mt-4">
+            <h4>Rate This Location</h4>
+            <div>
+              <label for="locationRating">Rating(1-10):</label>
+              <input type="text" id="locationRating" />
+            </div>
+            <div class="mt-2">
+              <label for="locationDescription">Description:</label>
+              <input type="text" id="locationDescription" />
+            </div>
+
+            <button
+              class="btn btn-outline-primary mt-2"
+              onclick="submitRatingData('{{ spot.id }}')"
+            >
+              Add Rating
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6 mb-4">
+      <div class="card p-3">
+        <div>
+          <h4 class = "text-center">All Ratings</h4>
+          <table class="table table-sm">
+            <thead class="thead-dark">
+              <tr>
+                <th scope="col">Rating</th>
+                <th scope="col">Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for rate in spot.ratings.all %}
+              <tr>
+                <th scope="row">{{ rate.rating }}</th>
+                <td>{{ rate.description }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class = "text-center">
+    <a class = "btn btn-outline-secondary" href = "/map">Return to Nap Spots</a>
+</div>
+
+{% else %}
+<div class = "text-center mt-5">
+  <h1 class = "text-danger">
+    You must be logged in to view Nap Spots
+  </h1>
+  <h5>
+      <a class="nav-link" href="{% url 'home' %}">Click here to go Home</a>
+  </h5>
+</div>
+{% endif %}
+
+{%endblock%}

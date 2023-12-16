@@ -1,0 +1,65 @@
+{% load static %}
+{% load static socialaccount %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <title>Django title slide</title>
+</head>
+<body>
+
+{% if user.is_authenticated %}
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="{% url 'my_map_view' %}">Napster</a>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active ml-3">
+                    <a class="nav-link" href="{% url 'home' %}">Home</a>
+                </li>
+                <li class="nav-item active ml-3">
+                    <a class="nav-link" href="{% url 'user_feedback' %}">Your Logs</a>
+                </li>
+                <li class="nav-item active ml-3">
+                    <a class="nav-link" href="{% url 'my_map_view' %}">View Nap Spots on Map</a>
+                </li>
+                <li class="nav-item active ml-3">
+                    <a class="nav-link" href="{% url 'logout_view' %}">Logout</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+{% else %}
+    <nav class="navbar navbar-expand-lg">
+        <a class="navbar-brand" href="#">Napster</a>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% provider_login_url 'google' %}">Login with Google</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+{% endif %}
+
+
+
+<div class="container text-center mt-5">
+    <h2>Welcome to Napster!</h2>
+    {% if user.is_authenticated %}
+    <p> You are signed in as {{user.email}}</p>
+        {% if user.is_superuser %}
+        <p> Hi admin member -- please look to see if you need to approve or remove any locations</p>
+        {% else %}
+        <p> Hi user! Check your log to see if anyone has approved or removed any of your locations </p>
+        {% endif %}
+    
+    {% endif %}
+</div>
+
+</body>
+</html>

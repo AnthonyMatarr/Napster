@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    .feedback-box {
+        border: 1px solid #ccc;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    .navbar-brand {
+      margin-left: 10px;  
+   }
+
+   .napspots-nav-item {
+      margin-left: 20px;
+   }
+
+</style>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="{% url 'my_map_view' %}">Napster</a>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item active ml-3">
+                <a class="nav-link" href="{% url 'home' %}">Home</a>
+            </li>
+            <li class="nav-item active ml-3">
+                <a class="nav-link" href="{% url 'user_feedback' %}">Your Logs</a>
+            </li>
+            <li class="nav-item active ml-3">
+                <a class="nav-link" href="{% url 'my_map_view' %}">View Nap Spots on Map</a>
+            </li>
+            <li class="nav-item active ml-3">
+                <a class="nav-link" href="{% url 'logout_view' %}">Logout</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container mt-5">
+    <h2>Your Logs</h2>
+    {% for feedback in user_feedback_list %}
+        <div class="feedback-box">
+            <h4>Feedback for Location {{ feedback.location.name }}</h4>
+            <p>Status: {% if feedback.location.approved %}Approved{% else %}Denied{% endif %}</p>
+            <p>{{ feedback.message }}</p>
+        </div>
+    {% endfor %}
+</div>
+{% endblock content %}

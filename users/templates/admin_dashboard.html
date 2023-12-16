@@ -1,0 +1,93 @@
+{% extends 'base.html' %} {% load static %} {% block content %}
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'css/home.css' %}" />
+    <style>
+      .navbar {
+        background-color: #d8bfff; /* light purple color */
+      }
+    </style>
+
+    <title>Admin Dashboard</title>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg">
+      <a class="navbar-brand" href="#">Admin Dashboard</a>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'logout_view' %}">Logout</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="container mt-5">
+      <h2>Welcome, Admin {{ user.username }}!</h2>
+      <ul class="messages">
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+      </ul>
+
+      <hr />
+      <h2>Manage Locations</h2>
+      <ul>
+        {% for location in locations %}
+        <li class="card m-2">
+          <div class="m-2">
+            {{ location.name }} - {{ location.address }} - {{location.user}} {% if location.approved%}(Approved){% else %}(Not Approved){% endif %}
+          </div>
+          <div>
+            <form method="post">
+              {% csrf_token %}
+              <input
+                type="hidden"
+                name="location_id"
+                value="{{ location.id }}"
+              />
+              {% if not location.approved %}
+              <button class = "btn btn-outline-success mb-2" type="submit" name="action" value="approve">
+                Approve
+              </button>
+              {% endif %}
+              <button class = "btn btn-outline-danger mb-2" type="submit" name="action" value="delete">Delete</button>
+              <a class="btn" href="/feedback/{{location.id}}">
+                Provide Feedback 
+              </a>
+            </form>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      <h2>Manage Reviews</h2>
+      <ul>
+          {% for rating in ratings %}
+          <li class="card m-2">
+              <div class="m-2">
+                  Review by {{ rating.location.name }} - {{ rating.description }} - {{rating.location}}
+              </div>
+              <div>
+                  <form method="post">
+                      {% csrf_token %}
+                      <input type="hidden" name="rating_id" value="{{ rating.id }}" />
+                      <button class="btn btn-outline-danger mb-2" type="submit" name="action" value="delete_review">Delete Review</button>
+                  </form>
+              </div>
+          </li>
+          {% endfor %}
+      </ul>
+      {% if messages %}
+{% endif %}
+
+    </div>
+  </body>
+</html>
+{% endblock content %}

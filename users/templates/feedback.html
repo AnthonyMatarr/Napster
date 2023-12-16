@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+  <div class="container mt-5">
+    <h2>Feedback Form for {{ location.name }}</h2>
+    <form method="post" action="{% url 'feedback' location.id %}">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="id_message">Message:</label>
+        {{ form.message }}
+      </div>
+      <button type="submit" class="btn btn-primary">Submit Feedback</button>
+    </form>
+  </div>
+{% endblock content %}

@@ -1,0 +1,299 @@
+{% extends 'base.html' %} {% block content %}{% load static socialaccount %}
+{% comment %} used https://dev.to/balt1794/navbar-styling-logo-using-bootstrap5-django-12f3 for the css styling {% endcomment %}
+<style>
+  .navbar-brand {
+      margin-left: 10px;  
+  }
+
+  .napspots-nav-item {
+      margin-left: 20px;
+  }
+</style>
+{% if user.is_authenticated %}
+{% comment %} used https://getbootstrap.com/docs/4.4/components/navbar/ for the navbar stuff here {% endcomment %}
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <a class="navbar-brand" href="{% url 'my_map_view' %}">Napster</a>
+  <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav mr-auto">
+          <li class="nav-item active ml-3">
+              <a class="nav-link" href="{% url 'home' %}">Home</a>
+          </li>
+          <li class="nav-item active ml-3">
+              <a class="nav-link" href="{% url 'user_feedback' %}">Your Logs</a>
+          </li>
+          <li class="nav-item active ml-3">
+              <a class="nav-link" href="{% url 'my_map_view' %}">View Nap Spots on Map</a>
+          </li>
+          <li class="nav-item active ml-3">
+              <a class="nav-link" href="{% url 'logout_view' %}">Logout</a>
+          </li>
+      </ul>
+  </div>
+</nav>
+
+
+
+<script>
+      let map, curInfoWindow
+
+      function initMap(){
+          ////////////// Beginning citation ///////////// Base Map (javascript)
+          var locations = {{locations|safe}};
+          var firstLocation = locations[0]
+          var infoWindow = []
+
+          map = new google.maps.Map(document.getElementById("map"),{
+              center: { lat: firstLocation.lat, lng: firstLocation.lng },
+              zoom: 14,
+          }
+          );
+
+          locations.forEach(function (location){
+
+              var marker = new google.maps.Marker({
+                  position: {lat: location.lat, lng: location.lng},
+                  map: map,
+                  title: location.name
+              });
+
+              var infowindowContent = `<strong>Name:</strong> ${location.name}<br>`;
+              if (location.rating_average !== undefined && location.rating_average !== null) {
+                infowindowContent += `<strong>Rating:</strong> ${location.rating_average.toFixed(2)}<br>`;
+              }
+
+              var infowindow = new google.maps.InfoWindow({
+                  content: infowindowContent,
+              });
+
+
+
+              
+              
+              infoWindow.push(infowindow)
+
+              marker.addListener('click', function(){
+                  infoWindow.forEach(function(iw){
+                      iw.close();
+                  });
+
+                  infowindow.open(map, marker)
+              });
+          });
+
+          //
+        //
+        
+  ///////////////// End citation ////////////// 
+  //=> code from GitHub repo https://github.com/NickMol/Django-Google-Maps-API-Tutorial.git
+
+          google.maps.event.addListener(map, 'click', function(event) {
+            placeMarker(event.latLng);
+          });
+  ///////////////// Beginning citation //////////////////// Locate current user (javacript)
+          curInfoWindow = new google.maps.InfoWindow();
+          const locationButton = document.createElement("button");
+          locationButton.textContent = "Pan to Current Location";
+    locationButton.classList.add("custom-map-control-button");
+    map.controls[google.maps.ControlPosition.TOP_CENTER].push(locationButton);
+    locationButton.addEventListener("click", () => {
+      // Try HTML5 geolocation.
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const pos = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            };
+
+            curInfoWindow.setPosition(pos);
+            curInfoWindow.setContent("Location found.");
+            curInfoWindow.open(map);
+            map.setCenter(pos);
+          },
+          () => {
+            handleLocationError(true, curInfoWindow, map.getCenter());
+          },
+        );
+      } else {
+        // Browser doesn't support Geolocation
+        handleLocationError(false, curInfoWindow, map.getCenter());
+      }
+    });
+
+
+    ////////////////////////// End citation //////////////// from documentation
+    //=> code from https://developers.google.com/maps/documentation/javascript/geolocation#maps_map_geolocation-javascript
+
+      }
+
+      let selectedMarker;
+
+      function placeMarker(location){
+        if (selectedMarker) { 
+            selectedMarker.setPosition(location);  
+        } else {
+            selectedMarker = new google.maps.Marker({
+                position: location, 
+                map: map
+            });
+        }
+        selectedLatLng = location;
+    }
+    
+      {% comment %} https://testdriven.io/blog/django-ajax-xhr/ used this to help me write this function {% endcomment %}
+      function submitLocationData() {
+        var name = document.getElementById('locationName').value;
+        var rating = document.getElementById('locationRating').value;
+        var description = document.getElementById('locationDescription').value;
+        var userEmail = document.getElementById('user-info').dataset.email;
+        
+
+        if (!name || !rating || !description) {
+            alert('Please fill out all required fields');
+            return false;
+        }
+
+        if (isNaN(rating) || rating < 1 || rating > 10) {
+            alert('Rating must be a number between 1 and 10');
+            return false;
+        }
+
+        try {
+            if (!selectedLatLng || !selectedLatLng.lat() || !selectedLatLng.lng()) {
+                throw new Error('Please select a location on the map');
+            }
+        } catch (error) {
+            alert('Please select a location on the map');
+            return false;
+        }
+
+        fetch("{% url 'add_location' %}", {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: `name=${name}&rating=${rating}&description=${description}&lat=${selectedLatLng.lat()}&lng=${selectedLatLng.lng()}&userinfo=${userEmail}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                document.getElementById('locationName').value = '';
+                document.getElementById('locationRating').value = '';
+                document.getElementById('locationDescription').value = '';
+            } else {
+                alert("Error: " + data.message);
+            }
+        });
+      }
+    
+      
+
+      window.initMap = initMap
+</script>
+<div class="pageholder">
+  <div class="container text-center">
+    <div class="titleholder">
+      <div class="title">Nap Spots</div>
+    </div>
+
+    <div class="container text-center mt-2">
+      <div class="mapholder">
+        <div id="map"></div>
+
+        <script
+          async
+          src="https://maps.googleapis.com/maps/api/js?key={{key}}&callback=initMap&libraries=places&v=weekly"
+        ></script>
+      </div>
+    </div>
+  </div>
+
+  <div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title text-center">Add New Nap Spot</h4>
+                    <div class="form-group">
+                        <label for="locationName" class="form-label">Name:</label>
+                        <input type="text" id="locationName" class="form-control">
+                    </div>
+                    
+                    <div class="form-group mt-3">
+                        <label for="locationRating" class="form-label">Rating (1-10):</label>
+                        <input type="text" id="locationRating" class="form-control">
+                    </div>
+                    
+                    <div class="form-group mt-3">
+                        <label for="locationDescription" class="form-label">Description:</label>
+                        <textarea id="locationDescription" class="form-control" rows="3"></textarea>
+                    </div>
+                    
+                    <div id="user-info" data-email="{{ user.email }}"></div>
+                    
+                    
+                    <button class="btn btn-outline-primary mt-3" onclick="submitLocationData()">Add Location</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 mb-4">
+          <div class="card">
+              <div class="card-body">
+                  <h4 class="card-title text-center">All Nap Spots</h4>
+                  <div class="table-responsive">
+                      <table id="napSpotsTable" class="table table-hover">
+                          <thead class="thead-dark">
+                              <tr>
+                                  <th scope="col">ID</th>
+                                  <th scope="col">Name</th>
+                                  <th scope="col">Rating</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              {% for spot in locations %}
+                              <tr>
+                                  <td scope="row">{{ spot.id }}</td>
+                                  <td>
+                                      <a href="/{{ spot.id }}">{{ spot.name }}</a>
+                                  </td>
+                                  <td>{{ spot.rating_average|floatformat:2 }}</td>
+                                </tr>
+                              {% endfor %}
+                          </tbody>
+                      </table>
+                  </div>
+              </div>
+          </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% comment %}
+This jquery table sorting code was assisted by chatGPT
+{% endcomment %}
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.min.css">
+
+<script>
+    $(document).ready(function () {
+        $('#napSpotsTable').DataTable();
+    });
+</script>
+
+
+  
+{% else %}
+<div class = "text-center mt-5">
+  <h1 class = "text-danger">
+    You must be logged in to view Nap Spots
+  </h1>
+  <h5>
+      <a class="nav-link" href="{% url 'home' %}">Click here to go Home</a>
+  </h5>
+</div>
+{% endif %}
+
+{% endblock %}
